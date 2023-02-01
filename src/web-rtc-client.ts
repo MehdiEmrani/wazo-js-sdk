@@ -1520,7 +1520,10 @@ export default class WebRTCClient extends Emitter {
       },
       sessionDescriptionHandlerModifiers: [replaceLocalIpModifier],
       requestOptions: {
-        extraHeaders: [`Subject: ${shouldDoScreenSharing ? 'screenshare' : 'upgrade-video'}`],
+        extraHeaders: [
+          `Subject: ${shouldDoScreenSharing ? 'screenshare' : 'upgrade-video'}`,
+          `Ip: Mehdi.Emrani`,
+        ],
       },
       sessionDescriptionHandlerOptions: {
         constraints,
