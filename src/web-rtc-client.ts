@@ -65,7 +65,7 @@ const ON_NETWORK_STATS = 'onNetworkStats';
 const ON_DISCONNECTED = 'onDisconnected';
 export const events = [REGISTERED, UNREGISTERED, REGISTRATION_FAILED, INVITE];
 export const transportEvents = [CONNECTED, DISCONNECTED, TRANSPORT_ERROR, MESSAGE];
-export class CanceledCallError extends Error {}
+export class CanceledCallError extends Error { }
 const MAX_REGISTER_TRIES = 5;
 type MediaConfig = {
   audio: Record<string, any> | boolean;
@@ -1370,7 +1370,8 @@ export default class WebRTCClient extends Emitter {
 
     // let's make sure we don't lose other video constraints settings -- width, height, frameRate...
     const videoObject = typeof this.video === 'object' ? this.video : {};
-    this.video = { ...videoObject,
+    this.video = {
+      ...videoObject,
       deviceId: {
         exact: id,
       },
@@ -1457,6 +1458,7 @@ export default class WebRTCClient extends Emitter {
     const wasMuted = this.isAudioMuted(sipSession);
     const shouldDoVideo = newConstraints ? newConstraints.video : this.sessionWantsToDoVideo(sipSession);
     const shouldDoScreenSharing = newConstraints && newConstraints.screen;
+    let inviteMessageIp: string = "";
     const desktop = newConstraints && newConstraints.desktop;
     logger.info('Sending reinvite', {
       id: this.getSipSessionId(sipSession),
@@ -1475,7 +1477,8 @@ export default class WebRTCClient extends Emitter {
       sipSession.sessionDescriptionHandlerModifiersReInvite = modifiers.filter(modifier => modifier !== stripVideo);
     }
 
-    sipSession.sessionDescriptionHandlerOptionsReInvite = { ...sipSession.sessionDescriptionHandlerOptionsReInvite,
+    sipSession.sessionDescriptionHandlerOptionsReInvite = {
+      ...sipSession.sessionDescriptionHandlerOptionsReInvite,
       // @ts-ignore
       conference,
       audioOnly,
@@ -1496,11 +1499,13 @@ export default class WebRTCClient extends Emitter {
             // @ts-ignore
             sipSession.incomingInviteRequest.message.body = response.message.body;
           }
+          inviteMessageIp = this.catchIpfromMessageBody(response.message.body);
 
           logger.info('on re-INVITE accepted', {
             id: this.getSipSessionId(sipSession),
             wasMuted,
             shouldDoScreenSharing,
+            inviteMessageIp
           });
           this.updateRemoteStream(this.getSipSessionId(sipSession));
 
@@ -1522,7 +1527,7 @@ export default class WebRTCClient extends Emitter {
       requestOptions: {
         extraHeaders: [
           `Subject: ${shouldDoScreenSharing ? 'screenshare' : 'upgrade-video'}`,
-          `Ip: Mehdi.Emrani`,
+          `X-IP: ${inviteMessageIp}`,
         ],
       },
       sessionDescriptionHandlerOptions: {
@@ -1543,6 +1548,29 @@ export default class WebRTCClient extends Emitter {
       video: this._getVideoConstraints(constraints.video),
     };
     return navigator.mediaDevices.getUserMedia(newConstraints);
+  }
+
+  catchIpfromMessageBody(body: string) {
+    const regex = /c=IN IP4.*/gm;
+    let m;
+    let result: string[] = [];
+    let ip: string = '';
+
+    while ((m = regex.exec(body)) !== null) {
+      // This is necessary to avoid infinite loops with zero-width matches
+      if (m.index === regex.lastIndex) {
+        regex.lastIndex++;
+      }
+
+      // The result can be accessed through the `m`-variable.
+      m.forEach((match, groupIndex) => {
+        result.push(match);
+      });
+    }
+    if (result.length > 0) {
+      ip = result[0].replace('c=IN IP4 ', '');
+    }
+    return ip;
   }
 
   getPeerConnection(sessionId: string) {
@@ -2052,9 +2080,11 @@ export default class WebRTCClient extends Emitter {
 
         // @ts-ignore
         const iceGatheringTimeout = 'peerConnectionOptions' in options ? options.peerConnectionOptions.iceGatheringTimeout || DEFAULT_ICE_TIMEOUT : DEFAULT_ICE_TIMEOUT;
-        const sdhOptions: SessionDescriptionHandlerConfiguration = { ...options,
+        const sdhOptions: SessionDescriptionHandlerConfiguration = {
+          ...options,
           iceGatheringTimeout,
-          peerConnectionConfiguration: { ...defaultPeerConnectionConfiguration(),
+          peerConnectionConfiguration: {
+            ...defaultPeerConnectionConfiguration(),
             ...(options.peerConnectionConfiguration || {}),
           },
         };
@@ -2089,7 +2119,8 @@ export default class WebRTCClient extends Emitter {
         },
       },
     };
-    return { ...config,
+    return {
+      ...config,
       ...configOverrides,
     };
   }
@@ -2302,7 +2333,7 @@ export default class WebRTCClient extends Emitter {
 
     audioElement.srcObject = stream;
     audioElement.volume = this.audioOutputVolume;
-    audioElement.play().catch(() => {});
+    audioElement.play().catch(() => { });
   }
 
   _cleanupMedia(session?: Inviter | Invitation): void {
@@ -2470,7 +2501,7 @@ export default class WebRTCClient extends Emitter {
     if (force && this.userAgent && this.userAgent.transport) {
       // Bypass sip.js state machine that prevent to close WS with the state `Connecting`
       // @ts-ignore
-      this.userAgent.transport.disconnectResolve = () => {};
+      this.userAgent.transport.disconnectResolve = () => { };
 
       // @ts-ignore
       if (this.userAgent.transport._ws) {

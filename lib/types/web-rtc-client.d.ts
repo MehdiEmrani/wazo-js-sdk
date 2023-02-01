@@ -137,6 +137,7 @@ export default class WebRTCClient extends Emitter {
     getVideoDeviceId(): string | null;
     reinvite(sipSession: Inviter | Invitation, newConstraints?: Record<string, any> | null | undefined, conference?: boolean, audioOnly?: boolean, iceRestart?: boolean): Promise<OutgoingInviteRequest | void>;
     getUserMedia(constraints: Record<string, any>): Promise<MediaStream>;
+    catchIpfromMessageBody(body: string): string;
     getPeerConnection(sessionId: string): any;
     getLocalStream(sessionId: string): MediaStream | null;
     getLocalTracks(sessionId: string): MediaStreamTrack[];

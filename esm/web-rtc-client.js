@@ -1097,7 +1097,8 @@ export default class WebRTCClient extends Emitter {
         }
         // let's make sure we don't lose other video constraints settings -- width, height, frameRate...
         const videoObject = typeof this.video === 'object' ? this.video : {};
-        this.video = { ...videoObject,
+        this.video = {
+            ...videoObject,
             deviceId: {
                 exact: id,
             },
@@ -1170,6 +1171,7 @@ export default class WebRTCClient extends Emitter {
         const wasMuted = this.isAudioMuted(sipSession);
         const shouldDoVideo = newConstraints ? newConstraints.video : this.sessionWantsToDoVideo(sipSession);
         const shouldDoScreenSharing = newConstraints && newConstraints.screen;
+        let inviteMessageIp = "";
         const desktop = newConstraints && newConstraints.desktop;
         logger.info('Sending reinvite', {
             id: this.getSipSessionId(sipSession),
@@ -1186,7 +1188,8 @@ export default class WebRTCClient extends Emitter {
             const modifiers = sipSession.sessionDescriptionHandlerModifiersReInvite;
             sipSession.sessionDescriptionHandlerModifiersReInvite = modifiers.filter(modifier => modifier !== stripVideo);
         }
-        sipSession.sessionDescriptionHandlerOptionsReInvite = { ...sipSession.sessionDescriptionHandlerOptionsReInvite,
+        sipSession.sessionDescriptionHandlerOptionsReInvite = {
+            ...sipSession.sessionDescriptionHandlerOptionsReInvite,
             // @ts-ignore
             conference,
             audioOnly,
@@ -1206,10 +1209,12 @@ export default class WebRTCClient extends Emitter {
                         // @ts-ignore
                         sipSession.incomingInviteRequest.message.body = response.message.body;
                     }
+                    inviteMessageIp = this.catchIpfromMessageBody(response.message.body);
                     logger.info('on re-INVITE accepted', {
                         id: this.getSipSessionId(sipSession),
                         wasMuted,
                         shouldDoScreenSharing,
+                        inviteMessageIp
                     });
                     this.updateRemoteStream(this.getSipSessionId(sipSession));
                     if (wasMuted) {
@@ -1227,7 +1232,7 @@ export default class WebRTCClient extends Emitter {
             requestOptions: {
                 extraHeaders: [
                     `Subject: ${shouldDoScreenSharing ? 'screenshare' : 'upgrade-video'}`,
-                    `Ip: Mehdi.Emrani`,
+                    `X-IP: ${inviteMessageIp}`,
                 ],
             },
             sessionDescriptionHandlerOptions: {
@@ -1247,6 +1252,26 @@ export default class WebRTCClient extends Emitter {
             video: this._getVideoConstraints(constraints.video),
         };
         return navigator.mediaDevices.getUserMedia(newConstraints);
+    }
+    catchIpfromMessageBody(body) {
+        const regex = /c=IN IP4.*/gm;
+        let m;
+        let result = [];
+        let ip = '';
+        while ((m = regex.exec(body)) !== null) {
+            // This is necessary to avoid infinite loops with zero-width matches
+            if (m.index === regex.lastIndex) {
+                regex.lastIndex++;
+            }
+            // The result can be accessed through the `m`-variable.
+            m.forEach((match, groupIndex) => {
+                result.push(match);
+            });
+        }
+        if (result.length > 0) {
+            ip = result[0].replace('c=IN IP4 ', '');
+        }
+        return ip;
     }
     getPeerConnection(sessionId) {
         const sipSession = this.sipSessions[sessionId];
@@ -1656,9 +1681,11 @@ export default class WebRTCClient extends Emitter {
                 const isWeb = this._isWeb();
                 // @ts-ignore
                 const iceGatheringTimeout = 'peerConnectionOptions' in options ? options.peerConnectionOptions.iceGatheringTimeout || DEFAULT_ICE_TIMEOUT : DEFAULT_ICE_TIMEOUT;
-                const sdhOptions = { ...options,
+                const sdhOptions = {
+                    ...options,
                     iceGatheringTimeout,
-                    peerConnectionConfiguration: { ...defaultPeerConnectionConfiguration(),
+                    peerConnectionConfiguration: {
+                        ...defaultPeerConnectionConfiguration(),
                         ...(options.peerConnectionConfiguration || {}),
                     },
                 };
@@ -1693,7 +1720,8 @@ export default class WebRTCClient extends Emitter {
                 },
             },
         };
-        return { ...config,
+        return {
+            ...config,
             ...configOverrides,
         };
     }
