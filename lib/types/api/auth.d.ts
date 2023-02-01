@@ -1,0 +1,64 @@
+import ApiRequester from '../utils/api-requester';
+import type { User, Tenant, Token, UUID, LogoutResponse, ListTenantsResponse, RequestError, ListUsersResponse, ListGroupsResponse, ListPoliciesResponse, GetTenantResponse, GetUserResponse } from '../domain/types';
+import Session from '../domain/Session';
+export declare const DEFAULT_BACKEND_USER = "wazo_user";
+export declare const BACKEND_LDAP_USER = "ldap_user";
+export declare const DETAULT_EXPIRATION = 3600;
+type LoginParams = {
+    username: string;
+    password: string;
+    backend: string;
+    expiration: number;
+    mobile?: boolean;
+    tenantId?: string;
+    domainName?: string;
+};
+type SendResetPasswordArgs = {
+    username: string;
+    email: string;
+};
+export interface AuthD {
+    checkToken: (token: Token) => Promise<boolean>;
+    authenticate: (token: Token) => Promise<Session | null | undefined>;
+    logIn(params: LoginParams): Promise<Session | null | undefined>;
+    logOut: (token: Token) => Promise<LogoutResponse>;
+    refreshToken: (refreshToken: string, backend: string, expiration: number, isMobile?: boolean, tenantId?: string, domainName?: string) => Promise<Session | null | undefined>;
+    deleteRefreshToken: (clientId: string) => Promise<boolean>;
+    updatePassword: (userUuid: UUID, oldPassword: string, newPassword: string) => Promise<boolean>;
+    sendDeviceToken: (userUuid: UUID, deviceToken: string, apnsVoipToken: string | null | undefined, apnsNotificationToken: string | null | undefined) => Promise<void>;
+    getPushNotificationSenderId: (userUuid: UUID) => Promise<string>;
+    sendResetPasswordEmail: (params: SendResetPasswordArgs) => Promise<boolean>;
+    resetPassword: (userUuid: string, password: string) => Promise<boolean>;
+    removeDeviceToken: (userUuid: UUID) => Promise<void>;
+    createUser: (username: string, password: string, firstname: string, lastname: string) => Promise<User | RequestError>;
+    addUserEmail: (userUuid: UUID, email: string, main?: boolean) => Promise<void>;
+    addUserPolicy: (userUuid: UUID, policyUuid: UUID) => Promise<void>;
+    getRestrictionPolicies: (scopes: string[]) => Promise<any>;
+    deleteUserPolicy: (userUuid: UUID, policyUuid: UUID) => Promise<any>;
+    addUserGroup: (userUuid: UUID, groupUuid: UUID) => Promise<any>;
+    listUsersGroup: (groupUuid: UUID) => Promise<any>;
+    deleteUserGroup: (userUuid: UUID, groupUuid: UUID) => Promise<void>;
+    getUser: (userUuid: UUID) => Promise<GetUserResponse>;
+    getUserSession: (userUuid: UUID) => Promise<any>;
+    deleteUserSession: (userUuid: UUID, sessionUuids: UUID) => Promise<void>;
+    listUsers: () => Promise<ListUsersResponse>;
+    deleteUser: (userUuid: UUID) => Promise<boolean | RequestError>;
+    listTenants: () => Promise<ListTenantsResponse>;
+    getTenant: (tenantUuid: UUID) => Promise<GetTenantResponse>;
+    createTenant: (name: string) => Promise<Tenant | RequestError>;
+    updateTenant: (uuid: UUID, name: string, contact: string, phone: string, address: Array<Record<string, any>>) => Promise<Tenant | RequestError>;
+    deleteTenant: (uuid: UUID) => Promise<boolean | RequestError>;
+    createGroup: (name: string) => Promise<void>;
+    listGroups: () => Promise<ListGroupsResponse>;
+    deleteGroup: (uuid: UUID) => Promise<boolean | RequestError>;
+    createPolicy: (name: string, description: string, aclTemplates: Array<Record<string, any>>) => Promise<void>;
+    listPolicies: () => Promise<ListPoliciesResponse>;
+    deletePolicy: (policyUuid: UUID) => Promise<boolean | RequestError>;
+    getProviders: (userUuid: UUID) => Promise<any>;
+    getProviderToken: (userUuid: UUID, provider: string) => Promise<string>;
+    getProviderAuthUrl: (userUuid: UUID, provider: string) => Promise<string>;
+    deleteProviderToken: (userUuid: UUID, provider: string) => Promise<void>;
+}
+declare const _default: (client: ApiRequester, baseUrl: string) => AuthD;
+export default _default;
+//# sourceMappingURL=auth.d.ts.map

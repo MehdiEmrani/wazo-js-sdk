@@ -1,0 +1,1 @@
+{"version":3,"file":"RemoteParticipant.d.ts","sourceRoot":"","sources":["../../../../src/simple/room/RemoteParticipant.ts"],"names":[],"mappings":"AAAA,OAAO,IAAI,MAAM,QAAQ,CAAC;AAC1B,OAAO,WAAW,EAAE,EAAE,cAAc,EAAE,MAAM,eAAe,CAAC;AAE5D,cAAM,iBAAkB,SAAQ,WAAW;gBAC7B,IAAI,EAAE,IAAI,EAAE,cAAc,EAAE,cAAc,EAAE,KAAK,GAAE,MAAM,CAAC,MAAM,EAAE,GAAG,CAAM;CAQxF;AAED,eAAe,iBAAiB,CAAC"}

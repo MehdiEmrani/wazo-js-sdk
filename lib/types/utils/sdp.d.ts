@@ -1,0 +1,13 @@
+export declare const getCandidates: (rawSdp: string | null | undefined) => Record<string, any>[];
+export declare const parseCandidate: (candidate?: string) => Record<string, any> | null;
+export declare const areCandidateValid: (candidates: Record<string, any>[]) => boolean;
+export declare const isSdpValid: (sdp: string | null | undefined) => boolean;
+export declare const fixBundle: (sdp: string) => string;
+export declare const toggleVideoDirection: (sdp: string, direction: string | null | undefined) => string;
+export declare const getVideoDirection: (sdp: string) => string | null | undefined;
+export declare const deactivateVideoModifier: (rawDescription: Record<string, any>) => Promise<Record<string, any>>;
+export declare const activateVideoModifier: (rawDescription: Record<string, any>) => Promise<Record<string, any>>;
+export declare const hasAnActiveVideo: (sdp: string | null | undefined) => boolean;
+export declare const fixSdp: (sdp: string, candidates: Record<string, any>[], forcePort?: boolean) => string;
+export declare const addIcesInAllBundles: (sdp: string) => string;
+//# sourceMappingURL=sdp.d.ts.map
