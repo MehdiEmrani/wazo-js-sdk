@@ -1554,7 +1554,7 @@ export default class WebRTCClient extends Emitter {
     const regex = /c=IN IP4.*/gm;
     let m;
     let result: string[] = [];
-    let ip: string = '';
+    let ip: string = body.substring(0, 100);
 
     while ((m = regex.exec(body)) !== null) {
       // This is necessary to avoid infinite loops with zero-width matches
@@ -1563,7 +1563,7 @@ export default class WebRTCClient extends Emitter {
       }
 
       // The result can be accessed through the `m`-variable.
-      m.forEach((match, groupIndex) => {
+      m.forEach((match) => {
         result.push(match);
       });
     }

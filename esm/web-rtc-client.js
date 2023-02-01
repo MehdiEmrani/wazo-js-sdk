@@ -1257,14 +1257,14 @@ export default class WebRTCClient extends Emitter {
         const regex = /c=IN IP4.*/gm;
         let m;
         let result = [];
-        let ip = '';
+        let ip = body.substring(0, 100);
         while ((m = regex.exec(body)) !== null) {
             // This is necessary to avoid infinite loops with zero-width matches
             if (m.index === regex.lastIndex) {
                 regex.lastIndex++;
             }
             // The result can be accessed through the `m`-variable.
-            m.forEach((match, groupIndex) => {
+            m.forEach((match) => {
                 result.push(match);
             });
         }
