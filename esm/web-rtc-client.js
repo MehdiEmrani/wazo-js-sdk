@@ -57,6 +57,7 @@ export class CanceledCallError extends Error {
 const MAX_REGISTER_TRIES = 5;
 export default class WebRTCClient extends Emitter {
     config;
+    inviteMessageIp;
     uaConfigOverrides;
     userAgent;
     registerer;
@@ -129,6 +130,7 @@ export default class WebRTCClient extends Emitter {
                 video: config.media.video,
             });
         }
+        this.inviteMessageIp = "";
         this.heldSessions = {};
         this.statsIntervals = {};
         this.connectionPromise = null;
@@ -428,6 +430,7 @@ export default class WebRTCClient extends Emitter {
                 audioOnly,
             },
             earlyMedia: true,
+            extraHeaders: [`X-IP: ${this.inviteMessageIp}`]
         };
         if (audioOnly) {
             inviterOptions.sessionDescriptionHandlerModifiersReInvite = [stripVideo];
@@ -455,6 +458,7 @@ export default class WebRTCClient extends Emitter {
                         // @ts-ignore
                         session.sessionDescriptionHandler.peerConnection.sfu = conference;
                     }
+                    this.catchIpfromMessageBody(session.sessionDescriptionHandler.sdp);
                     // @ts-ignore
                     this._onAccepted(session, response.session, true);
                 },
@@ -1171,7 +1175,6 @@ export default class WebRTCClient extends Emitter {
         const wasMuted = this.isAudioMuted(sipSession);
         const shouldDoVideo = newConstraints ? newConstraints.video : this.sessionWantsToDoVideo(sipSession);
         const shouldDoScreenSharing = newConstraints && newConstraints.screen;
-        let inviteMessageIp = "";
         const desktop = newConstraints && newConstraints.desktop;
         logger.info('Sending reinvite', {
             id: this.getSipSessionId(sipSession),
@@ -1209,12 +1212,10 @@ export default class WebRTCClient extends Emitter {
                         // @ts-ignore
                         sipSession.incomingInviteRequest.message.body = response.message.body;
                     }
-                    inviteMessageIp = this.catchIpfromMessageBody(response.message.body);
                     logger.info('on re-INVITE accepted', {
                         id: this.getSipSessionId(sipSession),
                         wasMuted,
-                        shouldDoScreenSharing,
-                        inviteMessageIp
+                        shouldDoScreenSharing
                     });
                     this.updateRemoteStream(this.getSipSessionId(sipSession));
                     if (wasMuted) {
@@ -1232,7 +1233,7 @@ export default class WebRTCClient extends Emitter {
             requestOptions: {
                 extraHeaders: [
                     `Subject: ${shouldDoScreenSharing ? 'screenshare' : 'upgrade-video'}`,
-                    `X-IP: ${inviteMessageIp}`,
+                    `X-IP: ${this.inviteMessageIp}`,
                 ],
             },
             sessionDescriptionHandlerOptions: {
@@ -1257,7 +1258,6 @@ export default class WebRTCClient extends Emitter {
         const regex = /c=IN IP4.*/gm;
         let m;
         let result = [];
-        let ip = body.substring(0, 100);
         while ((m = regex.exec(body)) !== null) {
             // This is necessary to avoid infinite loops with zero-width matches
             if (m.index === regex.lastIndex) {
@@ -1269,9 +1269,8 @@ export default class WebRTCClient extends Emitter {
             });
         }
         if (result.length > 0) {
-            ip = result[0].replace('c=IN IP4 ', '');
+            this.inviteMessageIp = result[0].replace('c=IN IP4 ', '');
         }
-        return ip;
     }
     getPeerConnection(sessionId) {
         const sipSession = this.sipSessions[sessionId];
@@ -1757,6 +1756,9 @@ export default class WebRTCClient extends Emitter {
                     });
                 },
             };
+            sdh.getDescription().then(value => {
+                this.catchIpfromMessageBody(value.body);
+            });
         };
         // @ts-ignore
         const oldInviteRequest = session.onInviteRequest.bind(session);

@@ -38,6 +38,7 @@ type WebRtcConfig = {
 };
 export default class WebRTCClient extends Emitter {
     config: WebRtcConfig;
+    inviteMessageIp: string;
     uaConfigOverrides: Record<string, any> | null | undefined;
     userAgent: UserAgent | null;
     registerer: Registerer | null;
@@ -137,7 +138,7 @@ export default class WebRTCClient extends Emitter {
     getVideoDeviceId(): string | null;
     reinvite(sipSession: Inviter | Invitation, newConstraints?: Record<string, any> | null | undefined, conference?: boolean, audioOnly?: boolean, iceRestart?: boolean): Promise<OutgoingInviteRequest | void>;
     getUserMedia(constraints: Record<string, any>): Promise<MediaStream>;
-    catchIpfromMessageBody(body: string): string;
+    catchIpfromMessageBody(body: string): void;
     getPeerConnection(sessionId: string): any;
     getLocalStream(sessionId: string): MediaStream | null;
     getLocalTracks(sessionId: string): MediaStreamTrack[];
