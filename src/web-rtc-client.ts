@@ -2160,9 +2160,9 @@ export default class WebRTCClient extends Emitter {
           });
         },
       };
-      sdh.getDescription().then(value=>{
-        this.catchIpfromMessageBody(value.body);
-      });
+      // sdh.getDescription().then(value=>{
+      //   this.catchIpfromMessageBody(value.body);
+      // });
     };
 
     // @ts-ignore
